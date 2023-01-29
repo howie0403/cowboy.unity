@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -26,6 +27,7 @@ public class MovementstateManager : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         //キャラクターコントローラーをプログラムと紐ずける？？
+        
     }
 
     
@@ -40,17 +42,18 @@ public class MovementstateManager : MonoBehaviour
         hzInput = Input.GetAxis("Horizontal");
 
         vInput = Input.GetAxis("Vertical");
-
-        dir = transform.forward * vInput + transform.right * hzInput;
-        controller.Move(dir * moveSpeed * Time.deltaTime);
+        
         //プレイヤーの移動をする為の式
-
-
+        //https://tech.pjin.jp/blog/2016/11/04/unity_skill_5/
+        Vector3 moveForward = Camera.main.transform.forward * vInput + Camera.main.transform.right * hzInput;
+        moveForward.y = Camera.main.transform.right.y;
+        controller.Move(moveForward * moveSpeed*Time.deltaTime);
     }
 
     bool IsGrounded()
-    //地面と接触しているかを確かめる為の処理
+        //地面と接触しているかを確かめる為の処理
     {
+        //空中にいても当たり判定ある
         spherePos = new Vector3(transform.position.x,transform.position.y - groundYoffset, transform.position.z);
         if (Physics.CheckSphere(spherePos, controller.radius - 0.05f, ground)) return true;
         return false;
@@ -69,7 +72,7 @@ public class MovementstateManager : MonoBehaviour
     private void OnDrawGizmos() 
     //当たり判定の可視化
     {
-        /*Gizmos.color = Color.red;
-        Gizmos.DrawSphere(spherePos, controller.radius - 0.05f);*/    
+        Gizmos.color = Color.red;
+        Gizmos.DrawSphere(spherePos, controller.radius - 0.05f);    
     }
 }
