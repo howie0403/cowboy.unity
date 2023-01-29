@@ -39,7 +39,7 @@ public class MovementstateManager : MonoBehaviour
     {
         hzInput = Input.GetAxis("Horizontal");
 
-        vInput = Input.GetAxis("vertical");
+        vInput = Input.GetAxis("Vertical");
 
         dir = transform.forward * vInput + transform.right * hzInput;
         controller.Move(dir * moveSpeed * Time.deltaTime);
@@ -64,11 +64,12 @@ public class MovementstateManager : MonoBehaviour
 
         controller.Move(velocity * Time.deltaTime);
     }
+    
 
     private void OnDrawGizmos() 
     //当たり判定の可視化
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(spherePos, controller.radius - 0.05f);    
+        /*Gizmos.color = Color.red;
+        Gizmos.DrawSphere(spherePos, controller.radius - 0.05f);*/    
     }
 }
