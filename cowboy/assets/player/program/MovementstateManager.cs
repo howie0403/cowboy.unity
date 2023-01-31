@@ -1,78 +1,113 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class MovementstateManager : MonoBehaviour
+namespace player.program
 {
-    public float moveSpeed = 3; 
-    //プレイヤーの移動速度設定
-    [HideInInspector] public Vector3 dir;
-    //プレイヤーの座標取得
-    float hzInput, vInput;
-    //情報をUnityに転送
-    CharacterController controller;
-    //キャラクターコントローラーを呼び出す
-
-    [SerializeField] float groundYoffset;
-    //関数地面のレイヤーの取得
-    [SerializeField] LayerMask ground;
-    //地面のレイヤーを取得
-    [SerializeField] float gravity = -9.81f;
-    //重力の設定　地球の重力＝-9.81f
-    Vector3 velocity;
-    Vector3 spherePos;
-
-    void Start()
+    public class MovementStateManager : MonoBehaviour
     {
-        controller = GetComponent<CharacterController>();
-        //キャラクターコントローラーをプログラムと紐ずける？？
+        //プレイヤーの移動速度
+        public float moveSpeed = 3;
         
-    }
-
-    
-    void Update()
-    {
-        GetDirectionAndMove();
-    }
-
-    void GetDirectionAndMove()
-    // 関数作成　現在のプレイヤー情報の11行目に転送
-    {
-        hzInput = Input.GetAxis("Horizontal");
-
-        vInput = Input.GetAxis("Vertical");
+        //プレイヤーの座標取得
+        [HideInInspector] public Vector3 dir;
         
-        //プレイヤーの移動をする為の式
-        //https://tech.pjin.jp/blog/2016/11/04/unity_skill_5/
-        Vector3 moveForward = Camera.main.transform.forward * vInput + Camera.main.transform.right * hzInput;
-        moveForward.y = Camera.main.transform.right.y;
-        controller.Move(moveForward * moveSpeed*Time.deltaTime);
-    }
+        //スティックの情報
+        float hzInput, vInput;
+        
+        //キャラクターコントローラー
+        CharacterController controller;
 
-    bool IsGrounded()
-        //地面と接触しているかを確かめる為の処理
-    {
-        //空中にいても当たり判定ある
-        spherePos = new Vector3(transform.position.x,transform.position.y - groundYoffset, transform.position.z);
-        if (Physics.CheckSphere(spherePos, controller.radius - 0.05f, ground)) return true;
-        return false;
-    }
+        //地面からの高さ
+        [SerializeField] float groundYOffset;
 
-    void Gravity()
-    //重力処理の為の関数
-    {
-        if(!IsGrounded()) velocity.y += gravity * Time.deltaTime;
-        else if(velocity.y < 0) velocity.y = -2;
+        //地面のレイヤー情報
+        [SerializeField] LayerMask ground;
+        
+        //重力の設定　地球の重力＝-9.81f
+        [SerializeField] float gravity = -9.81f;
+        
+        Vector3 velocity;
+        Vector3 spherePos;
+        //カメラ
+        [SerializeField] public Camera camera;
+        //スライダー
+        [SerializeField] private LayerMask slider;
 
-        controller.Move(velocity * Time.deltaTime);
-    }
-    
+        void Start()
+        {
+            controller = GetComponent<CharacterController>();
+            if (camera == null) camera = Camera.main;
+            //キャラクターコントローラーをプログラムと紐ずける？？
 
-    private void OnDrawGizmos() 
-    //当たり判定の可視化
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(spherePos, controller.radius - 0.05f);    
+        }
+
+
+        void Update()
+        {
+            GetDirectionAndMove();
+        }
+
+        void GetDirectionAndMove()
+            // 関数作成　現在のプレイヤー情報の11行目に転送
+        {
+            hzInput = Input.GetAxis("Horizontal");
+
+            vInput = Input.GetAxis("Vertical");
+            //プレイヤーの移動をする為の式
+            //https://tech.pjin.jp/blog/2016/11/04/unity_skill_5/
+            if (IsOnSphere(slider)&&!IsGrounded()) Slide();
+            else
+            {
+                Vector3 moveForward = camera.transform.forward * vInput + camera.transform.right * hzInput;
+                moveForward.y = camera.transform.right.y;
+                controller.Move(moveForward.normalized * moveSpeed * Time.deltaTime);
+            }
+            Gravity();
+        }
+
+        bool IsGrounded()
+            //地面と接触しているかを確かめる為の処理
+        {
+            return IsOnSphere(ground);
+        }
+        
+        //地面がmaskに接しているか
+        bool IsOnSphere(LayerMask mask)
+        {
+            spherePos = new Vector3(transform.position.x, transform.position.y- groundYOffset, transform.position.z);
+            if (Physics.CheckSphere(spherePos, controller.radius - 0.05f, mask)) return true;
+            return false;
+        }
+
+        //スライダーに乗ったときの移動
+        //跳ねる
+        void Slide()
+        {
+            Vector3 moveForward = camera.transform.forward * vInput + camera.transform.right * hzInput;
+            float b = transform.position.y;
+            controller.Move(moveForward.normalized*2/3 * moveSpeed * Time.deltaTime);
+            if (transform.position.y < b)
+            {
+                moveForward.y +=gravity*Time.deltaTime*10;//10でなくてもよい
+                controller.Move(moveForward.normalized*3/2 * moveSpeed * Time.deltaTime);
+            }
+        }
+
+        void Gravity()
+            //重力処理の為の関数
+        {
+            if (!IsGrounded()) velocity.y += gravity * Time.deltaTime;
+            else if (velocity.y < 0) velocity.y = -2;
+            controller.Move(velocity * Time.deltaTime);
+        }
+
+
+        private void OnDrawGizmos()
+            //当たり判定の可視化
+        {
+            if (controller == null) controller = GetComponent<CharacterController>();
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(spherePos, controller.radius - 0.05f);
+        }
     }
 }
